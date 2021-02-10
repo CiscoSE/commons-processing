@@ -1,0 +1,37 @@
+
+
+etcd maps keys:
+
+insert:
+
+timestamp need to be unique
+
+commons-processing-etcd.queue.map.timestamp.pending.1.random=key1
+commons-processing-etcd.queue.map.timestamp.pending.2.random=key2
+commons-processing-etcd.queue.map.timestamp.pending.3.random=key3
+commons-processing-etcd.queue.map.timestamp.pending.4.random=key1 (not inserting)
+
+commons-processing-etcd.queue.map.data.key1=value1
+commons-processing-etcd.queue.map.data.key2=value2
+commons-processing-etcd.queue.map.data.key3=value3
+
+poll:
+
+lock? :
+get commons-processing-etcd.queue.map.timestamp first, sorted, max result=1
+Replace atomically / via locking:
+commons-processing-etcd.queue.map.timestamp.pending.1.random=key1
+With:
+commons-processing-etcd.queue.map.timestamp.inprogress.1.random=key1
+
+get commons-processing-etcd.queue.map.data.KEY
+process
+remove both
+
+Recovery ?
+crashed when inprogress, leftover inprogress and lock remained locked ?
+via checking is locked, or unlock wait and try...
+
+time based locking, not intended for long processing data object time
+
+
