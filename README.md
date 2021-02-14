@@ -41,13 +41,9 @@ For a persistent distributed solution, see [commons-processing-etcd](./commons-p
 DataProcessor:
 
 ```
-DataObjectProcessor dataObjectProcessor = new DataObjectProcessor() {
-			
-	@Override
-	public boolean process(DataObject dataObject) {
-		log.info("processing dataObject: {}", dataObject.getData());
-		return true;
-	}
+DataObjectProcessor dataObjectProcessor = (dataObject) -> {
+	log.info("processing dataObject: {}", dataObject.getData());
+	return true;
 };
 
 DataProcessor dataProcessor = DataProcessor.builder().dataObjectProcessor(dataObjectProcessor)

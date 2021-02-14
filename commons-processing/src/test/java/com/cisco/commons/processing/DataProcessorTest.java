@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,25 +40,17 @@ public class DataProcessorTest {
 		String testKey = "a1";
 		AtomicInteger testKeyProcessedCount = new AtomicInteger(0);
 		AtomicInteger processedDataObjectsCount = new AtomicInteger(0);
-		DataObjectProcessor dataObjectProcessor = new DataObjectProcessor() {
-			
-			@Override
-			public boolean process(DataObject dataObject) {
-				sleepQuitely(100);
-				log.info("processed dataObject: {}", dataObject.getKey());
-				processedDataObjectsCount.incrementAndGet();
-				if (testKey.equals(dataObject.getKey())) {
-					testKeyProcessedCount.incrementAndGet();
-				}
-				return true;
+		DataObjectProcessor dataObjectProcessor = (dataObject) -> {
+			sleepQuitely(100);
+			log.info("processed dataObject: {}", dataObject.getKey());
+			processedDataObjectsCount.incrementAndGet();
+			if (testKey.equals(dataObject.getKey())) {
+				testKeyProcessedCount.incrementAndGet();
 			}
+			return true;
 		};
-		FailureHandler failureHandler = new FailureHandler() {
-			
-			@Override
-			public void handleFailure(Supplier<Boolean> supplier) {
-				log.info("handleFailure.");
-			}
+		FailureHandler failureHandler = (supplier) -> {
+			log.info("handleFailure.");
 		};
 		DataObjectProcessResultHandler resultHandler = new DataObjectProcessResultHandler() {
 			@Override
