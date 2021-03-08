@@ -17,8 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  * It is getting a provided pool for the tasks, and using an internal scheduled pool for retries scheduling only.
  * close() must be closed when done.
  * 
- * @author Liran Mendelovich
- * 
+ * <br/>
  * Copyright 2021 Cisco Systems
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * @author Liran Mendelovich
  */
 @Slf4j
 public class RetryExecutor {
@@ -72,7 +73,7 @@ public class RetryExecutor {
         log.debug("whenComplete called with result: {}, count: {}, retries: {}", result, count, retries);
         log.debug("throwable: ", throwable);
         if (!result && count < retries) {
-            log.debug("Execution failed. Scheduling retry execution.");
+            log.info("Execution failed. Scheduling retry execution.");
             executeAsync(supplier, pool, delay, timeUnit, retries, count + 1, resultHandler, failureHandler);
         } else {
         	log.debug("Execution done.");
