@@ -62,6 +62,9 @@ retryExecutor.executeAsync(supplier, pool, retryDelaySeconds, TimeUnit.SECONDS, 
 
 See [DataProcessorTest](./commons-processing/src/test/java/com/cisco/commons/processing/DataProcessorTest.java) for further details.
 
+## commons-processing-kafka
+Kafka processing utilities, see [commons-processing-kafka](./commons-processing-kafka/README.md)
+
 ## Contributions
  * [Contributing](CONTRIBUTING.md) - how to contribute.
  * [Contributors](docs/CONTRIBUTORS.md) - Folks who have contributed, thanks very much!
