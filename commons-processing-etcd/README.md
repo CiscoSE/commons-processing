@@ -68,8 +68,8 @@ See [ETCDDataProcessorTest](./src/test/java/com/cisco/commons/processing/distrib
 Locking is time based, not intended for long processing data object time. For large processing time, locking time can be exposed to be configured by user, and handled accordingly when lock is expired.
 
 ## Contributions
- * [Contributing](CONTRIBUTING.md) - how to contribute.
- * [Contributors](docs/CONTRIBUTORS.md) - Folks who have contributed, thanks very much!
+ * [Contributing](../CONTRIBUTING.md) - how to contribute.
+ * [Contributors](../docs/CONTRIBUTORS.md) - Folks who have contributed, thanks very much!
 
 ## Licensing
 

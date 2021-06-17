@@ -47,6 +47,22 @@ public class KafkaUtils {
 		
 	}
 	
+	/**
+	 * Set dynamic topic configuration if not already set.
+	 * 
+	 * Example usage: <br/>
+	 * <code>
+	 * Map<String, String> configMap = new HashMap<>();
+	 * configMap.put(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(Duration.ofHours(6).toMillis()));
+	 * configMap.put(TopicConfig.RETENTION_BYTES_CONFIG, Long.toString(1024 * 1024 * 500));
+	 * KafkaUtils.setDynamicTopicConfig(applicationConfig.getKafkaUrl(), applicationConfig.getDataGetTopic(), configMap);
+	 * </code>
+	 * 
+	 * @param kafkaUrl - Kafka URL
+	 * @param topic - Kafka topic
+	 * @param configMapCandidate - configuration map candidate to update if needed
+	 * @throws Exception - in case of error
+	 */
 	public static void setDynamicTopicConfig(String kafkaUrl, String topic,
 			Map<String, String> configMapCandidate) throws Exception {
 		log.info("Setting topic {} config map candidate: {}", topic, configMapCandidate);
