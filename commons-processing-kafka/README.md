@@ -19,7 +19,7 @@ each message with idempotent outcome.
 **Note**: This is not an official Cisco product.
 
 ## Future enhancements to consider
-* Configurable TopicConsumer parameters via builder.
+* Configurable classes parameters via builder.
 
 ## Contributions
  * [Contributing](../CONTRIBUTING.md) - how to contribute.
