@@ -10,11 +10,16 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class RetryExecutorTest {
 
     @Test
     public void retryExecutorTest() throws InterruptedException {
-        RetryExecutor retryExecutor = RetryExecutor.builder().build();
+    	log.info("retryExecutorTest begin");
+		RetryExecutor retryExecutor = RetryExecutor.builder()
+    		.build();
         ExecutorService pool = Executors.newCachedThreadPool();
         AtomicInteger count = new AtomicInteger(0);
         Supplier<Boolean> supplier = () -> {
@@ -31,9 +36,10 @@ public class RetryExecutorTest {
 			}
 		};
 		retryExecutor.executeAsync(supplier, pool, retryDelaySeconds, TimeUnit.SECONDS, retries, resultHandler, null);
-        Thread.sleep(retryDelaySeconds * 1000 + 500);
+		Thread.sleep(retryDelaySeconds * 1000 + 500);
         assertEquals(1 + retries, count.intValue());
         assertEquals(1, resultsCount.intValue());
+        log.info("retryExecutorTest end");
     }
 
 }

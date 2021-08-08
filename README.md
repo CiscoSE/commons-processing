@@ -58,6 +58,16 @@ RetryExecutor:
 ```
 RetryExecutor retryExecutor = RetryExecutor.builder().build();
 retryExecutor.executeAsync(supplier, pool, retryDelaySeconds, TimeUnit.SECONDS, retries, resultHandler, null);
+
+or:
+
+BackOff backOff = new ExponentialBackOff.Builder()
+	.setInitialIntervalMillis(500)
+	.setMultiplier(1.5)
+	.setMaxElapsedTimeMillis(Integer.MAX_VALUE)
+	.build();
+retryExecutor.executeAsync(supplier, pool, backOff, retries, resultHandler, null);
+
 ```
 
 See [DataProcessorTest](./commons-processing/src/test/java/com/cisco/commons/processing/DataProcessorTest.java) for further details.

@@ -1,5 +1,6 @@
 package com.cisco.commons.processing.retry;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -8,7 +9,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import com.google.api.client.util.BackOff;
+
 import lombok.Builder;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -34,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RetryExecutor {
 
+	@Setter
     private ExecutorService retriesScheduledPool;
     
     @Builder
@@ -52,29 +57,60 @@ public class RetryExecutor {
      * @param failureHandler - optional failure handler - called when all attempts complete with failure.
      */
     public void executeAsync(Supplier<Boolean> supplier, ExecutorService pool, long delay, TimeUnit timeUnit, int retries, ResultHandler resultHandler, FailureHandler failureHandler) {
-    	executeAsync(supplier, pool, delay, timeUnit, retries, 0, resultHandler, failureHandler);
+    	BackOff backOff = new BackOff() {
+			
+			@Override
+			public void reset() throws IOException {
+				
+			}
+			
+			@Override
+			public long nextBackOffMillis() throws IOException {
+				return timeUnit.toMillis(delay);
+			}
+		};
+    	executeAsync(supplier, pool, backOff, retries, resultHandler, failureHandler);
+    }
+    
+    /**
+     * Execute async tasks with a delayed retry mechanism, without blocking for waiting for a response.
+     * @param supplier - supplier for the action, should return the boolean result of the action, true indicates success, and false indicates on a failure, resulting in conditional retry.
+     * @param pool - the pool to execute the tasks.
+     * @param backOff - BackOff to use for delay time
+     * @param retries - number of times for retries attempts, not including the initial action.
+     * @param resultHandler - optional last result handler - called when all attempts complete.
+     * @param failureHandler - optional failure handler - called when all attempts complete with failure.
+     */
+    public void executeAsync(Supplier<Boolean> supplier, ExecutorService pool, BackOff backOff, 
+    		int retries, ResultHandler resultHandler, FailureHandler failureHandler) {
+    	executeAsync(supplier, pool, backOff, retries, 0, resultHandler, failureHandler);
     }
 
-    private void executeAsync(Supplier<Boolean> supplier, ExecutorService pool, long delay, TimeUnit timeUnit, int retries, int count, ResultHandler resultHandler, FailureHandler failureHandler) {
+    private void executeAsync(Supplier<Boolean> supplier, ExecutorService pool, BackOff backOff, int retries, int count, ResultHandler resultHandler, FailureHandler failureHandler) {
         log.debug("executeAsync called, count: {}", count);
         BiConsumer<? super Boolean, ? super Throwable> action = (result, throwable) -> 
-        	whenComplete(supplier, result, throwable, pool, delay, timeUnit, retries, count, resultHandler, failureHandler);
-        long delayValue = delay;
-        if (count == 0) {
-        	delayValue = 0;
+        	whenComplete(supplier, result, throwable, pool, backOff, retries, count, resultHandler, failureHandler);
+        long delayValue = 0;
+        if (count > 0) {
+        	delayValue = nextBackOffMillis(backOff);
         }
-        Executor executor = CompletableFuture.delayedExecutor(delayValue, timeUnit, pool);
-        log.debug("Scheduling delayed execution for {} {} from now.", delayValue, timeUnit);
+        Executor executor = CompletableFuture.delayedExecutor(delayValue, TimeUnit.MILLISECONDS, pool);
+        String messageFormat = "Scheduling delayed execution for {} ms from now.";
+        if (delayValue > 0) {
+        	log.info(messageFormat, delayValue);
+        } else {
+        	log.debug(messageFormat, delayValue);
+        }
         CompletableFuture.supplyAsync(supplier, executor).whenCompleteAsync(action, pool);
     }
 
     private void whenComplete(Supplier<Boolean> supplier, Boolean result, Throwable throwable, ExecutorService pool, 
-    		long delay, TimeUnit timeUnit, int retries, int count, ResultHandler resultHandler, FailureHandler failureHandler) {
+    		BackOff backOff, int retries, int count, ResultHandler resultHandler, FailureHandler failureHandler) {
         log.debug("whenComplete called with result: {}, count: {}, retries: {}", result, count, retries);
         log.debug("throwable: ", throwable);
         if (!result && count < retries) {
             log.info("Execution failed. Scheduling retry execution.");
-            executeAsync(supplier, pool, delay, timeUnit, retries, count + 1, resultHandler, failureHandler);
+            executeAsync(supplier, pool, backOff, retries, count + 1, resultHandler, failureHandler);
         } else {
         	log.debug("Execution done.");
         	if (resultHandler != null) {
@@ -101,10 +137,15 @@ public class RetryExecutor {
 			log.error("Error in resultHandler handleResult: " + e.getMessage(), e);
 		}
 	}
-
-    public void setRetriesScheduledPool(ExecutorService retriesScheduledPool) {
-        this.retriesScheduledPool = retriesScheduledPool;
-    }
+    
+    public static long nextBackOffMillis(BackOff backoff) {
+		try {
+			return backoff.nextBackOffMillis();
+		} catch (IOException e) {
+			log.error("Error getting nextBackOffMillis: " + e.getClass() + ", " + e.getMessage(), e);
+			return 0;
+		}
+	}
 
     /**
      * Shutdown the internal retries scheduled pool.
