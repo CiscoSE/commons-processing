@@ -1,6 +1,10 @@
 package com.cisco.commons.processing.kafka;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import lombok.extern.slf4j.Slf4j;
@@ -60,5 +64,18 @@ public class ConcurrentUtils {
 			// Preserve interrupt status
 			Thread.currentThread().interrupt();
 		}
+	}
+	
+	public static Map<String, String> calculatePoolStats(ThreadPoolExecutor threadPoolExecutor, String label) {
+		Map<String, String> stats = new LinkedHashMap<>();
+		stats.put(label + ".pool.active.count", String.valueOf(threadPoolExecutor.getActiveCount()));
+		stats.put(label + ".pool.completed.tasks.count", String.valueOf(threadPoolExecutor.getCompletedTaskCount()));
+		stats.put(label + ".pool.core.pool.size", String.valueOf(threadPoolExecutor.getCorePoolSize()));
+		stats.put(label + ".pool.largest.pool.size", String.valueOf(threadPoolExecutor.getLargestPoolSize()));
+		stats.put(label + ".pool.max.pool.size", String.valueOf(threadPoolExecutor.getMaximumPoolSize()));
+		stats.put(label + ".pool.pool.size", String.valueOf(threadPoolExecutor.getPoolSize()));
+		stats.put(label + ".pool.tasks.count", String.valueOf(threadPoolExecutor.getTaskCount()));
+		stats.put(label + ".pool.queue.size", String.valueOf(threadPoolExecutor.getQueue().size()));
+		return Collections.unmodifiableMap(stats);
 	}
 }

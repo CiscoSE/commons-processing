@@ -75,6 +75,20 @@ See [DataProcessorTest](./commons-processing/src/test/java/com/cisco/commons/pro
 ## commons-processing-kafka
 Kafka processing utilities, see [commons-processing-kafka](./commons-processing-kafka/README.md)
 
+## Quality Assurance
+
+### Code analysis
+Code analysis done with Sonar.
+
+### Security
+Scanned with OWASP dependency-check-maven plugin for dependency-check-report.
+
+### Testing
+Flows are covered by unit tests.
+
+## Build
+Run maven install on parent project.
+
 ## Contributions
  * [Contributing](CONTRIBUTING.md) - how to contribute.
  * [Contributors](docs/CONTRIBUTORS.md) - Folks who have contributed, thanks very much!
