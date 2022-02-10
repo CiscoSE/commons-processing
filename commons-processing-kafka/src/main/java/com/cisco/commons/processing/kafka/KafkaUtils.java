@@ -1,15 +1,19 @@
 package com.cisco.commons.processing.kafka;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -18,8 +22,11 @@ import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.ConfigEntry.ConfigSource;
+import org.apache.kafka.clients.admin.ConsumerGroupDescription;
+import org.apache.kafka.clients.admin.ConsumerGroupListing;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +56,7 @@ public class KafkaUtils {
 	
 	/**
 	 * Set dynamic topic configuration if not already set.
+	 * Using Kafka admin client.
 	 * 
 	 * Example usage: <br/>
 	 * <code>
@@ -68,24 +76,25 @@ public class KafkaUtils {
 		log.info("Setting topic {} config map candidate: {}", topic, configMapCandidate);
 		Map<String, Object> config = new HashMap<>();                
 	    config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
-	    AdminClient client = AdminClient.create(config);
-	    Map<String, String> configMap = new HashMap<>(configMapCandidate);
-	    ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topic);
-	    DescribeConfigsResult topicsConfig = client.describeConfigs(Arrays.asList(resource));
-	    KafkaFuture<Map<ConfigResource, Config>> mapFuture = topicsConfig.all();
-	    if (mapFuture != null) {
-	    	Map<ConfigResource, Config> topicMap = mapFuture.get(3, TimeUnit.SECONDS);
-	    	if (topicMap != null) {
-	    		Set<Entry<ConfigResource, Config>> entries = topicMap.entrySet();
-	    		for (Entry<ConfigResource, Config> entry : entries) {
-					updateConfigMap(configMapCandidate, configMap, entry);
-				}
-	    	}
-	    }
-	    if (!config.isEmpty()) {
-	    	setTopicConfig(client, topic, resource, configMap);
-	    } else {
-	    	log.info("Not setting config as not needed for topic: {}", topic);
+	    try (AdminClient kafkaClient = AdminClient.create(config)) {
+		    Map<String, String> configMap = new HashMap<>(configMapCandidate);
+		    ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topic);
+		    DescribeConfigsResult topicsConfig = kafkaClient.describeConfigs(Arrays.asList(resource));
+		    KafkaFuture<Map<ConfigResource, Config>> mapFuture = topicsConfig.all();
+		    if (mapFuture != null) {
+		    	Map<ConfigResource, Config> topicMap = mapFuture.get(3, TimeUnit.SECONDS);
+		    	if (topicMap != null) {
+		    		Set<Entry<ConfigResource, Config>> entries = topicMap.entrySet();
+		    		for (Entry<ConfigResource, Config> entry : entries) {
+						updateConfigMap(configMapCandidate, configMap, entry);
+					}
+		    	}
+		    }
+		    if (!config.isEmpty()) {
+		    	setTopicConfig(kafkaClient, topic, resource, configMap);
+		    } else {
+		    	log.info("Not setting config as not needed for topic: {}", topic);
+		    }
 	    }
 	}
 
@@ -122,6 +131,46 @@ public class KafkaUtils {
 				log.info("{} already equals {}, not setting new value.", configMapEntry.getKey(), configMapEntry.getValue());
 				configMap.remove(configMapEntry.getKey());
 			}
+		}
+	}
+	
+	/**
+	 * list of topic consumers (consumer groups) which are subscribed to the Kafka topic.
+	 * Using Kafka admin client.
+	 * This method is using Kafka client methods for iterating and not very efficient, use with caution.
+	 * @param kafkaUrl Kafka URL
+	 * @param topic Kafka topic
+	 * @return list of topic consumers (consumer groups) which are subscribed to the Kafka topic.
+	 * @throws IOException
+	 */
+	public static List<String> listTopicConsumers(String kafkaUrl, String topic) throws IOException {
+		log.info("listTopicConsumers for topic {}", topic);
+		Map<String, Object> config = new HashMap<>();                
+	    config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
+	    List<String> topicConsumersGroupIds = new LinkedList<>();
+	    try (AdminClient kafkaClient = AdminClient.create(config)) {
+	    	List<String> groupIds = kafkaClient.listConsumerGroups().all().get().
+                stream().map(ConsumerGroupListing::groupId).collect(Collectors.toList());
+	    	log.info("listTopicConsumers groupIds: {}", groupIds);
+			Map<String, ConsumerGroupDescription> groups = kafkaClient.
+                describeConsumerGroups(groupIds).all().get(5, TimeUnit.SECONDS);
+			log.info("listTopicConsumers groups: {}", groups);
+			for (final String groupId : groupIds) {
+				ConsumerGroupDescription consumerGroupDescription = groups.get(groupId);
+				Optional<TopicPartition> topicPartition = consumerGroupDescription.members().stream().
+					map(s -> s.assignment().topicPartitions()).
+						flatMap(Collection::stream).
+						filter(s -> s.topic().equals(topic)).findAny();
+				if (topicPartition.isPresent()) {
+					topicConsumersGroupIds.add(consumerGroupDescription.groupId());
+				}
+			}
+			log.info("listTopicConsumers topicConsumersGroupIds: {}", topicConsumersGroupIds);
+			return topicConsumersGroupIds;
+	    } catch (Exception e) {
+	    	String errorMessage = "Error in listTopicConsumers: " + e.getClass() + ", " + e.getMessage();
+			log.error(errorMessage, e);
+			throw new IOException(errorMessage, e);
 		}
 	}
 	

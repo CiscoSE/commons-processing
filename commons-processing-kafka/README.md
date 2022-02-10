@@ -16,6 +16,11 @@ Working by "at least once" message processing paradigm, which is mostly the case
 as message processing can fail before the Kafka commit action. Thus the consumer handler is expected to treat
 each message with idempotent outcome.
 
+### Kafka Utilities
+KafkaUtils class is available with some helpful methods, for example:
+* setDynamicTopicConfig - for changing topic retention configuration and more.
+* listTopicConsumers - list of topic consumers (consumer groups) which are subscribed to the Kafka topic.
+
 **Note**: This is not an official Cisco product.
 
 ## Future enhancements to consider
