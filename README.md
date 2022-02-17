@@ -38,7 +38,8 @@ The solution is in-process, non-persistent and non-distributed.
 For a persistent distributed solution, see [commons-processing-etcd](./commons-processing-etcd/README.md)
 
 ### Example usage
-DataProcessor:
+
+#### DataProcessor
 
 ```
 DataObjectProcessor dataObjectProcessor = (dataObject) -> {
@@ -53,13 +54,13 @@ DataProcessor dataProcessor = DataProcessor.builder().dataObjectProcessor(dataOb
 dataProcessor.aggregate(1, dataObject);
 ```
 
-RetryExecutor:
+#### RetryExecutor
 
 ```
 RetryExecutor retryExecutor = RetryExecutor.builder().build();
 retryExecutor.executeAsync(supplier, pool, retryDelaySeconds, TimeUnit.SECONDS, retries, resultHandler, null);
 
-or:
+or with a backoff policy with a random jitter:
 
 BackOff backOff = new ExponentialBackOff.Builder()
 	.setInitialIntervalMillis(500)

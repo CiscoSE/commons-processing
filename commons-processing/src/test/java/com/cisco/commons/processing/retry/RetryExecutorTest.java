@@ -10,6 +10,9 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
+import com.google.api.client.util.BackOff;
+import com.google.api.client.util.ExponentialBackOff;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -39,6 +42,15 @@ public class RetryExecutorTest {
 		Thread.sleep(retryDelaySeconds * 1000 + 500);
         assertEquals(1 + retries, count.intValue());
         assertEquals(1, resultsCount.intValue());
+        
+        BackOff backOff = new ExponentialBackOff.Builder()
+    		.setInitialIntervalMillis(500)
+    		.setMultiplier(1.5)
+    		.setMaxElapsedTimeMillis(Integer.MAX_VALUE)
+    		.build();
+        
+        retryExecutor.executeAsync(supplier, pool, backOff, retries, resultHandler, null);
+
         log.info("retryExecutorTest end");
     }
 
