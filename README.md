@@ -1,15 +1,21 @@
-## Commons processing
+# Commons processing
+
+## Utilities
+[ResourcesUtil](./commons-processing/src/main/java/com/cisco/commons/processing/ResourcesUtil.java) - Utility statistics methods related to resources like CPU and memory
+
+## Data Processing
+
 Processing data objects/messages by multiple parallel consumers with ability to override pending objects tasks for saving redundant data and tasks, based on queue map.  
 Using Independent asynchronous retry executor.
 
 **Note**: This is not an official Cisco product.
 
-## Problem & Solution
+### Problem & Solution
 ![queue](./docs/queue.jpg)
 
 [queue.drawio](./docs/queue.drawio)
 
-## Flow Diagram
+### Flow Diagram
   
 ![Commons processing](./docs/commons-processing.jpg)
 

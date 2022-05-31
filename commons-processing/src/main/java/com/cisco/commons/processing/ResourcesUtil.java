@@ -12,7 +12,7 @@ import com.sun.management.OperatingSystemMXBean;
 /**
  * Resources utilities.
  * 
- * Resources like CPU and memory.
+ * Utility statistics methods related to resources like CPU and memory.
  * 
  * @author Liran Mendelovich
  * 
